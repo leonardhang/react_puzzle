@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import './puzzle.css'
 
 interface Piece {
@@ -11,12 +11,7 @@ interface Piece {
 const Puzzle: React.FC = () => {
     const [bgImage, setBgImage] = useState<string | null>(null);
     const [splitNumber, setSplitNumber] = useState<number>(3);
-    const [pieces, setPieces] = useState<Piece[]>([]);
     const draggedPiece = useRef<Piece | null>(null);
-
-    useEffect(() => {
-        generatePieces();
-    }, [bgImage, splitNumber]);
 
     const generatePieces = () => {
         const newPieces: Piece[] = [];
@@ -29,8 +24,15 @@ const Puzzle: React.FC = () => {
             const j = Math.floor(Math.random() * (i + 1));
             [newPieces[i], newPieces[j]] = [newPieces[j], newPieces[i]];
         }
-        setPieces(newPieces);
+        //setPieces(newPieces);
+        return newPieces;
     };
+
+    const newPieces = useMemo(() => {
+        return generatePieces();
+    }, [bgImage, splitNumber]);
+
+    const [pieces, setPieces] = useState<Piece[]>(newPieces);
 
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -73,6 +75,13 @@ const Puzzle: React.FC = () => {
         setTimeout(() => {
             checkIsWin();
         }, 1);
+    }
+
+    const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        const target = event.target as HTMLDivElement;
+        const pieceId = target.getAttribute('id');
+        console.log(`Dragging over piece: ${pieceId}`);
     }
 
     const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
@@ -120,7 +129,7 @@ return (
         </section>
         <section className='puzzle-container' style={{ gridTemplateColumns: `repeat(${splitNumber}, 100px)`, gridTemplateRows: `repeat(${splitNumber}, 100px)` }}>
             {pieces.map((piece) => (
-                <div id={piece.id} className="puzzle_piece" draggable onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDrop={handleDrop} style={{ backgroundImage: `url(${bgImage})`, backgroundSize: `${100 * splitNumber}px`, backgroundPosition: `${-piece.x}px ${-piece.y}px` }} ></div>
+                <div key={piece.id} id={piece.id} className="puzzle_piece" draggable onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragOver={handleDragOver} onDrop={handleDrop} style={{ backgroundImage: `url(${bgImage})`, backgroundSize: `${100 * splitNumber}px`, backgroundPosition: `${-piece.x}px ${-piece.y}px` }} ></div>
             ))}
         </section>
     </>
